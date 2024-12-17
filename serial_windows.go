@@ -16,7 +16,12 @@ package serial
 // https://playground.arduino.cc/Interfacing/CPPWindows
 // https://www.tldp.org/HOWTO/Serial-HOWTO-19.html
 
-import "syscall"
+import (
+	"syscall"
+	"time"
+
+	"golang.org/x/sys/windows"
+)
 
 var parityMap = map[Parity]byte{
 	NoParity:    0,
@@ -212,6 +217,20 @@ func (p *Port) ResetOutputBuffer() error {
 	}
 
 	return purgeComm(p.internal.handle, purgeTxClear|purgeTxAbort)
+}
+
+func (p *Port) Break(d time.Duration) error {
+	if err := windows.SetCommBreak(p.internal.handle); err != nil {
+		return &PortError{wrapped: err}
+	}
+
+	time.Sleep(d)
+
+	if err := windows.ClearCommBreak(p.internal.handle); err != nil {
+		return &PortError{wrapped: err}
+	}
+
+	return nil
 }
 
 func (p *Port) SetDTR(dtr bool) error {

@@ -21,10 +21,12 @@ import (
 	"go.uber.org/multierr"
 	"golang.org/x/sys/unix"
 
-	"github.com/albenik/go-serial/v2/unixutils"
+	"github.com/mfkenney/go-serial/v2/unixutils"
 )
 
 const FIONREAD = 0x541B
+const ioctlTioccbrk = unix.TIOCCBRK
+const ioctlTiocsbrk = unix.TIOCSBRK
 
 var (
 	zeroByte   = []byte{0}
@@ -243,6 +245,24 @@ func (p *Port) ResetOutputBuffer() error {
 
 	if err := unix.IoctlSetInt(p.internal.handle, ioctlTcflsh, unix.TCOFLUSH); err != nil {
 		return newPortOSError(err)
+	}
+	return nil
+}
+
+// Break sets a BREAK condition (logic low) on the Tx line for duration t.
+func (p *Port) Break(t time.Duration) error {
+	if err := p.checkValid(); err != nil {
+		return err
+	}
+
+	if err := unix.IoctlSetInt(p.internal.handle, ioctlTiocsbrk, 0); err != nil {
+		return err
+	}
+
+	time.Sleep(t)
+
+	if err := unix.IoctlSetInt(p.internal.handle, ioctlTioccbrk, 0); err != nil {
+		return err
 	}
 	return nil
 }
