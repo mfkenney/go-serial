@@ -49,6 +49,10 @@ func TestPortNilReceiver_Error(t *testing.T) {
 		checkError((*serial.Port)(nil).ResetOutputBuffer())
 	})
 
+	t.Run("Break", func(t *testing.T) {
+		checkError((*serial.Port)(nil).Break(0))
+	})
+
 	t.Run("SetDTR", func(t *testing.T) {
 		checkError((*serial.Port)(nil).SetDTR(false))
 	})
